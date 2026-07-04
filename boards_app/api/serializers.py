@@ -35,6 +35,7 @@ class BoardListSerializer(serializers.ModelSerializer):
     def get_tasks_high_prio_count(self, obj):
         return 0
 
+
 class BoardCreateSerializer(serializers.ModelSerializer):
     members = serializers.ListField(
         child=serializers.IntegerField(),
@@ -63,7 +64,8 @@ class BoardCreateSerializer(serializers.ModelSerializer):
     def validate_members(self, value):
         users = User.objects.filter(id__in=value)
         if users.count() != len(set(value)):
-            raise serializers.ValidationError("One or more users do not exist.")
+            raise serializers.ValidationError(
+                "One or more users do not exist.")
         return value
 
     def create(self, validated_data):
@@ -92,3 +94,27 @@ class BoardCreateSerializer(serializers.ModelSerializer):
 
     def get_tasks_high_prio_count(self, obj):
         return 0
+
+
+class BoardMemberSerializer(serializers.ModelSerializer):
+    fullname = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ["id", "email", "fullname"]
+
+    def get_fullname(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip()
+
+
+class BoardDetailSerializer(serializers.ModelSerializer):
+    owner_id = serializers.IntegerField(source="owner.id", read_only=True)
+    members = BoardMemberSerializer(many=True, read_only=True)
+    tasks = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Board
+        fields = ["id", "title", "owner_id", "members", "tasks"]
+
+    def get_tasks(self, obj):
+        return []
