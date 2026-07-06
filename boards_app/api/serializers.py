@@ -118,3 +118,42 @@ class BoardDetailSerializer(serializers.ModelSerializer):
 
     def get_tasks(self, obj):
         return []
+
+
+class BoardUpdateSerializer(serializers.ModelSerializer):
+    members = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=True,
+    )
+    owner_data = BoardMemberSerializer(source="owner", read_only=True)
+    members_data = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Board
+        fields = ["id", "title", "owner_data", "members", "members_data"]
+        read_only_fields = ["id", "owner_data", "members_data", "title"]
+
+    def validate_members(self, value):
+        unique_ids = set(value)
+        users = User.objects.filter(id__in=unique_ids)
+
+        if users.count() != len(unique_ids):
+            raise serializers.ValidationError(
+                "One or more users do not exist.")
+
+        return value
+
+    def update(self, instance, validated_data):
+        member_ids = set(validated_data.get("members", []))
+        member_ids.add(instance.owner.id)
+
+        users = User.objects.filter(id__in=member_ids)
+        instance.members.set(users)
+        instance.save()
+
+        return instance
+
+    def get_members_data(self, obj):
+        members = obj.members.all()
+        return BoardMemberSerializer(members, many=True).data
