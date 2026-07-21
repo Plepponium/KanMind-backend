@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from boards_app.models import Board
+from tasks_app.api.serializers import TaskCreateSerializer
 
 
 class BoardListSerializer(serializers.ModelSerializer):
@@ -117,7 +118,7 @@ class BoardDetailSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "owner_id", "members", "tasks"]
 
     def get_tasks(self, obj):
-        return []
+        return TaskCreateSerializer(obj.tasks.all(), many=True).data
 
 
 class BoardUpdateSerializer(serializers.ModelSerializer):
