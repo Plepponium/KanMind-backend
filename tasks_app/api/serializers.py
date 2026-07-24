@@ -1,8 +1,32 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from boards_app.models import Board
 from tasks_app.models import Task
+
+
+class BoardMemberValidationMixin:
+
+    @property
+    def board(self):
+        if self.instance is not None:
+            return self.instance.board
+        return self.context["board_instance"]
+
+    def _validate_member(self, user_id, field_name):
+        if user_id is None:
+            return None
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                {field_name:
+                    f"{field_name.replace('_id', '').capitalize()} not found."}
+            )
+        if self.board.owner != user and user not in self.board.members.all():
+            raise serializers.ValidationError(
+                {field_name: f"{field_name.replace('_id', '').capitalize()} must be a board member."}
+            )
+        return user
 
 
 class TaskUserSerializer(serializers.ModelSerializer):
@@ -16,13 +40,12 @@ class TaskUserSerializer(serializers.ModelSerializer):
         return f"{obj.first_name} {obj.last_name}".strip()
 
 
-class TaskCreateSerializer(serializers.ModelSerializer):
+class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializer):
     board = serializers.IntegerField(write_only=True)
     assignee_id = serializers.IntegerField(
         write_only=True, required=False, allow_null=True)
     reviewer_id = serializers.IntegerField(
         write_only=True, required=False, allow_null=True)
-
     assignee = TaskUserSerializer(read_only=True)
     reviewer = TaskUserSerializer(read_only=True)
     comments_count = serializers.SerializerMethodField(read_only=True)
@@ -45,59 +68,60 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
-        board = self.context.get("board_instance")
-
-        assignee_id = attrs.get("assignee_id")
-        reviewer_id = attrs.get("reviewer_id")
-
-        if assignee_id is not None:
-            try:
-                assignee = User.objects.get(id=assignee_id)
-            except User.DoesNotExist:
-                raise serializers.ValidationError(
-                    {"assignee_id": "Assignee not found."})
-
-            if board.owner != assignee and assignee not in board.members.all():
-                raise serializers.ValidationError(
-                    {"assignee_id": "Assignee must be a board member."}
-                )
-
-            attrs["assignee"] = assignee
-
-        if reviewer_id is not None:
-            try:
-                reviewer = User.objects.get(id=reviewer_id)
-            except User.DoesNotExist:
-                raise serializers.ValidationError(
-                    {"reviewer_id": "Reviewer not found."})
-
-            if board.owner != reviewer and reviewer not in board.members.all():
-                raise serializers.ValidationError(
-                    {"reviewer_id": "Reviewer must be a board member."}
-                )
-
-            attrs["reviewer"] = reviewer
-
+        attrs["assignee"] = self._validate_member(
+            attrs.get("assignee_id"), "assignee_id")
+        attrs["reviewer"] = self._validate_member(
+            attrs.get("reviewer_id"), "reviewer_id")
         return attrs
 
     def create(self, validated_data):
-        validated_data.pop("board", None)
-        validated_data.pop("assignee_id", None)
-        validated_data.pop("reviewer_id", None)
-
-        board = self.context["board_instance"]
-
+        for key in ("board", "assignee_id", "reviewer_id"):
+            validated_data.pop(key, None)
         task = Task.objects.create(
-            board=board,
-            title=validated_data["title"],
-            description=validated_data.get("description", ""),
-            status=validated_data["status"],
-            priority=validated_data["priority"],
-            assignee=validated_data.get("assignee"),
-            reviewer=validated_data.get("reviewer"),
-            due_date=validated_data.get("due_date"),
-        )
+            board=self.board, created_by=self.context["request"].user, **validated_data)
         return task
 
     def get_comments_count(self, obj):
         return 0
+
+
+class TaskUpdateSerializer(BoardMemberValidationMixin, serializers.ModelSerializer):
+    assignee_id = serializers.IntegerField(
+        write_only=True, required=False, allow_null=True)
+    reviewer_id = serializers.IntegerField(
+        write_only=True, required=False, allow_null=True)
+    assignee = TaskUserSerializer(read_only=True)
+    reviewer = TaskUserSerializer(read_only=True)
+
+    class Meta:
+        model = Task
+        fields = [
+            "id",
+            "title",
+            "description",
+            "status",
+            "priority",
+            "assignee_id",
+            "reviewer_id",
+            "assignee",
+            "reviewer",
+            "due_date",
+        ]
+
+    def validate(self, attrs):
+        if "assignee_id" in self.initial_data:
+            attrs["assignee"] = self._validate_member(
+                attrs.get("assignee_id"), "assignee_id")
+        if "reviewer_id" in self.initial_data:
+            attrs["reviewer"] = self._validate_member(
+                attrs.get("reviewer_id"), "reviewer_id")
+        return attrs
+
+    def update(self, instance, validated_data):
+        for key in ("assignee_id", "reviewer_id"):
+            validated_data.pop(key, None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance

@@ -27,14 +27,14 @@ class Task(models.Model):
     description = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES)
-    assignee = models.ForeignKey(  # überarbeiten
+    assignee = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="assigned_tasks",
     )
-    reviewer = models.ForeignKey(  # überarbeiten
+    reviewer = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
@@ -42,6 +42,14 @@ class Task(models.Model):
         related_name="review_tasks",
     )
     due_date = models.DateField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_tasks",
+    )
+
 
     def __str__(self):
         return self.title
