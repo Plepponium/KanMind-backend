@@ -6,10 +6,10 @@ from tasks_app.api.serializers import TaskCreateSerializer
 
 
 class BoardListSerializer(serializers.ModelSerializer):
-    member_count = serializers.SerializerMethodField()
-    ticket_count = serializers.SerializerMethodField()
-    tasks_to_do_count = serializers.SerializerMethodField()
-    tasks_high_prio_count = serializers.SerializerMethodField()
+    member_count = serializers.IntegerField(read_only=True)
+    ticket_count = serializers.IntegerField(read_only=True)
+    tasks_to_do_count = serializers.IntegerField(read_only=True)
+    tasks_high_prio_count = serializers.IntegerField(read_only=True)
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
 
     class Meta:
@@ -24,18 +24,6 @@ class BoardListSerializer(serializers.ModelSerializer):
             "owner_id",
         ]
 
-    def get_member_count(self, obj):
-        return obj.members.count()
-
-    def get_ticket_count(self, obj):
-        return 0
-
-    def get_tasks_to_do_count(self, obj):
-        return 0
-
-    def get_tasks_high_prio_count(self, obj):
-        return 0
-
 
 class BoardCreateSerializer(serializers.ModelSerializer):
     members = serializers.ListField(
@@ -44,9 +32,9 @@ class BoardCreateSerializer(serializers.ModelSerializer):
         required=False,
     )
     member_count = serializers.SerializerMethodField(read_only=True)
-    ticket_count = serializers.SerializerMethodField(read_only=True)
-    tasks_to_do_count = serializers.SerializerMethodField(read_only=True)
-    tasks_high_prio_count = serializers.SerializerMethodField(read_only=True)
+    ticket_count = serializers.IntegerField(read_only=True, default=0)
+    tasks_to_do_count = serializers.IntegerField(read_only=True, default=0)
+    tasks_high_prio_count = serializers.IntegerField(read_only=True, default=0)
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
 
     class Meta:
@@ -63,8 +51,9 @@ class BoardCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_members(self, value):
-        users = User.objects.filter(id__in=value)
-        if users.count() != len(set(value)):
+        unique_ids = set(value)
+        users = User.objects.filter(id__in=unique_ids)
+        if users.count() != len(unique_ids):
             raise serializers.ValidationError(
                 "One or more users do not exist.")
         return value
@@ -86,15 +75,6 @@ class BoardCreateSerializer(serializers.ModelSerializer):
 
     def get_member_count(self, obj):
         return obj.members.count()
-
-    def get_ticket_count(self, obj):
-        return 0
-
-    def get_tasks_to_do_count(self, obj):
-        return 0
-
-    def get_tasks_high_prio_count(self, obj):
-        return 0
 
 
 class BoardMemberSerializer(serializers.ModelSerializer):

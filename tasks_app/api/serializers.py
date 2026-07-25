@@ -40,6 +40,30 @@ class TaskUserSerializer(serializers.ModelSerializer):
         return f"{obj.first_name} {obj.last_name}".strip()
 
 
+class TaskListSerializer(serializers.ModelSerializer):
+    assignee = TaskUserSerializer(read_only=True)
+    reviewer = TaskUserSerializer(read_only=True)
+    comments_count = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Task
+        fields = [
+            "id",
+            "board",
+            "title",
+            "description",
+            "status",
+            "priority",
+            "assignee",
+            "reviewer",
+            "due_date",
+            "comments_count",
+        ]
+
+    def get_comments_count(self, obj):
+        return 0
+
+
 class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializer):
     board = serializers.IntegerField(write_only=True)
     assignee_id = serializers.IntegerField(

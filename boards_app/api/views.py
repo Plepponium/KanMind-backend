@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, Count
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
@@ -17,6 +17,15 @@ class BoardViewSet(ModelViewSet):
         if self.action == "list":
             return Board.objects.filter(
                 Q(owner=user) | Q(members=user)
+            ).annotate(
+                member_count=Count("members", distinct=True),
+                ticket_count=Count("tasks", distinct=True),
+                tasks_to_do_count=Count(
+                    "tasks", filter=Q(tasks__status="to-do"), distinct=True
+                ),
+                tasks_high_prio_count=Count(
+                    "tasks", filter=Q(tasks__priority="high"), distinct=True
+                ),
             ).distinct()
 
         return Board.objects.all()

@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from tasks_app.models import Task
 
-from .serializers import TaskCreateSerializer, TaskUpdateSerializer
+from .serializers import TaskCreateSerializer, TaskListSerializer, TaskUpdateSerializer
 
 
 class TaskCreateView(APIView):
@@ -99,3 +99,27 @@ class TaskDetailView(APIView):
         self.check_delete_permission(task, request.user)
         task.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TaskAssignedToMeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tasks = Task.objects.filter(
+            assignee=request.user
+        ).select_related("assignee", "reviewer").order_by("id")
+
+        serializer = TaskListSerializer(tasks, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TaskReviewingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tasks = Task.objects.filter(
+            reviewer=request.user
+        ).select_related("assignee", "reviewer").order_by("id")
+
+        serializer = TaskListSerializer(tasks, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
