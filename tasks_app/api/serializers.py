@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from tasks_app.models import Task
+from tasks_app.models import Comment, Task
 
 
 class BoardMemberValidationMixin:
@@ -61,7 +61,7 @@ class TaskListSerializer(serializers.ModelSerializer):
         ]
 
     def get_comments_count(self, obj):
-        return 0
+        return obj.comments.count()
 
 
 class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializer):
@@ -106,7 +106,7 @@ class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
         return task
 
     def get_comments_count(self, obj):
-        return 0
+        return obj.comments.count()
 
 
 class TaskUpdateSerializer(BoardMemberValidationMixin, serializers.ModelSerializer):
@@ -149,3 +149,27 @@ class TaskUpdateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class TaskCommentSerializer(serializers.ModelSerializer):
+    author = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ["id", "created_at", "author", "content"]
+
+    def get_author(self, obj):
+        return f"{obj.author.first_name} {obj.author.last_name}".strip()
+
+
+class TaskCommentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ["id", "content"]
+
+    def create(self, validated_data):
+        return Comment.objects.create(
+            task=self.context["task"],
+            author=self.context["request"].user,
+            content=validated_data["content"],
+        )

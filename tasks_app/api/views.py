@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from tasks_app.models import Task
 
-from .serializers import TaskCreateSerializer, TaskListSerializer, TaskUpdateSerializer
+from .serializers import TaskCommentCreateSerializer, TaskCommentSerializer, TaskCreateSerializer, TaskListSerializer, TaskUpdateSerializer
 
 
 class TaskCreateView(APIView):
@@ -123,3 +123,49 @@ class TaskReviewingView(APIView):
 
         serializer = TaskListSerializer(tasks, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TaskCommentsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_task(self, task_id):
+        try:
+            task_id = int(task_id)
+        except (ValueError, TypeError):
+            raise ValidationError({"task_id": "Task-ID must be a valid integer."})
+
+        try:
+            return Task.objects.select_related("board", "board__owner").get(id=task_id)
+        except Task.DoesNotExist:
+            raise NotFound("Task not found.")
+
+    def check_board_membership(self, board, user):
+        if board.owner != user and user not in board.members.all():
+            raise PermissionDenied(
+                "You must be a member of this board to access comments for this task."
+            )
+
+    def get(self, request, task_id):
+        task = self.get_task(task_id)
+        self.check_board_membership(task.board, request.user)
+
+        comments = task.comments.select_related("author").all().order_by("created_at")
+        serializer = TaskCommentSerializer(comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, task_id):
+        task = self.get_task(task_id)
+        self.check_board_membership(task.board, request.user)
+
+        serializer = TaskCommentCreateSerializer(
+            data=request.data,
+            context={
+                "request": request,
+                "task": task,
+            },
+        )
+        serializer.is_valid(raise_exception=True)
+        comment = serializer.save()
+
+        response_serializer = TaskCommentSerializer(comment)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
