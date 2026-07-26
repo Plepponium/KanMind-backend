@@ -50,6 +50,11 @@ class Task(models.Model):
         related_name="created_tasks",
     )
 
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Task"
+        verbose_name_plural = "Tasks"
+
     def __str__(self):
         return self.title
 
@@ -69,7 +74,9 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["created_at"]
+        ordering = ["id"]
+        verbose_name = "Comment"
+        verbose_name_plural = "Comments"
 
     def __str__(self):
         return f"Comment {self.id} on task {self.task_id}"
