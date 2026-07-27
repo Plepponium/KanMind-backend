@@ -5,14 +5,19 @@ from tasks_app.models import Comment, Task
 
 
 class BoardMemberValidationMixin:
+    """Shared validation for assignee and reviewer against the current board."""
 
     @property
     def board(self):
+        """Return the current board from the instance or serializer context."""
+
         if self.instance is not None:
             return self.instance.board
         return self.context["board_instance"]
 
     def _validate_member(self, user_id, field_name):
+        """Validate that the given user exists and belongs to the board."""
+
         if user_id is None:
             return None
         try:
@@ -72,7 +77,7 @@ class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
         write_only=True, required=False, allow_null=True)
     assignee = TaskUserSerializer(read_only=True)
     reviewer = TaskUserSerializer(read_only=True)
-    comments_count = serializers.SerializerMethodField(read_only=True)
+    comments_count = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Task
@@ -105,9 +110,6 @@ class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
             board=self.board, created_by=self.context["request"].user, **validated_data)
         return task
 
-    def get_comments_count(self, obj):
-        return obj.comments.count()
-
 
 class TaskUpdateSerializer(BoardMemberValidationMixin, serializers.ModelSerializer):
     assignee_id = serializers.IntegerField(
@@ -133,6 +135,8 @@ class TaskUpdateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
         ]
 
     def validate(self, attrs):
+        """Only validate assignee/reviewer if they are explicitly sent in PATCH."""
+
         if "assignee_id" in self.initial_data:
             attrs["assignee"] = self._validate_member(
                 attrs.get("assignee_id"), "assignee_id")
@@ -163,9 +167,16 @@ class TaskCommentSerializer(serializers.ModelSerializer):
 
 
 class TaskCommentCreateSerializer(serializers.ModelSerializer):
+    """Create a comment for the task from the current authenticated user."""
+
     class Meta:
         model = Comment
         fields = ["id", "content"]
+
+    def validate_content(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("This field may not be blank.")
+        return value
 
     def create(self, validated_data):
         return Comment.objects.create(

@@ -12,7 +12,7 @@ class TaskAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ("id", "__str__", "content", "task",
+    list_display = ("id", "__str__", "author", "content", "task",
                     "task__id", "created_at")
     list_filter = ("task", "author")
     search_fields = ("content",)
