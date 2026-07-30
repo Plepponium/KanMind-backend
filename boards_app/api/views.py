@@ -28,7 +28,7 @@ class BoardViewSet(ModelViewSet):
                 ),
             )
 
-        return queryset
+        return Board.objects.all()
 
     def get_permissions(self):
         if self.action in ["retrieve", "partial_update"]:
