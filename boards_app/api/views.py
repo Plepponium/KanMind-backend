@@ -13,11 +13,11 @@ class BoardViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        queryset = Board.objects.filter(
+            Q(owner=user) | Q(members=user)).distinct()
 
         if self.action == "list":
-            return Board.objects.filter(
-                Q(owner=user) | Q(members=user)
-            ).annotate(
+            return queryset.annotate(
                 member_count=Count("members", distinct=True),
                 ticket_count=Count("tasks", distinct=True),
                 tasks_to_do_count=Count(
@@ -26,9 +26,9 @@ class BoardViewSet(ModelViewSet):
                 tasks_high_prio_count=Count(
                     "tasks", filter=Q(tasks__priority="high"), distinct=True
                 ),
-            ).distinct()
+            )
 
-        return Board.objects.all()
+        return queryset
 
     def get_permissions(self):
         if self.action in ["retrieve", "partial_update"]:

@@ -113,7 +113,7 @@ class BoardUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = ["id", "title", "owner_data", "members", "members_data"]
-        read_only_fields = ["id", "owner_data", "members_data", "title"]
+        read_only_fields = ["id", "owner_data", "members_data"]
 
     def validate_members(self, value):
         unique_ids = set(value)
@@ -126,8 +126,10 @@ class BoardUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
-        member_ids = set(validated_data.get("members", []))
+        member_ids = set(validated_data.pop("members", []))
         member_ids.add(instance.owner.id)
+
+        instance.title = validated_data.get("title", instance.title)
 
         users = User.objects.filter(id__in=member_ids)
         instance.members.set(users)
