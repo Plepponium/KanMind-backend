@@ -71,6 +71,7 @@ class TaskListSerializer(serializers.ModelSerializer):
 
 class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializer):
     board = serializers.IntegerField(write_only=True)
+    board_id = serializers.IntegerField(source="board.id", read_only=True)
     assignee_id = serializers.IntegerField(
         write_only=True, required=False, allow_null=True)
     reviewer_id = serializers.IntegerField(
@@ -84,6 +85,7 @@ class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
         fields = [
             "id",
             "board",
+            "board_id",
             "title",
             "description",
             "status",
