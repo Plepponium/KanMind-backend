@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
+from boards_app.models import Board
 from tasks_app.models import Comment, Task
 
 
@@ -70,8 +71,7 @@ class TaskListSerializer(serializers.ModelSerializer):
 
 
 class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializer):
-    board = serializers.IntegerField(write_only=True)
-    board_id = serializers.IntegerField(source="board.id", read_only=True)
+    board = serializers.PrimaryKeyRelatedField(queryset=Board.objects.all())
     assignee_id = serializers.IntegerField(
         write_only=True, required=False, allow_null=True)
     reviewer_id = serializers.IntegerField(
@@ -85,7 +85,6 @@ class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
         fields = [
             "id",
             "board",
-            "board_id",
             "title",
             "description",
             "status",
@@ -106,10 +105,10 @@ class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
         return attrs
 
     def create(self, validated_data):
-        for key in ("board", "assignee_id", "reviewer_id"):
+        for key in ("assignee_id", "reviewer_id"):
             validated_data.pop(key, None)
         task = Task.objects.create(
-            board=self.board, created_by=self.context["request"].user, **validated_data)
+            created_by=self.context["request"].user, **validated_data)
         return task
 
 
