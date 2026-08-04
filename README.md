@@ -1,11 +1,12 @@
 # KanMind Backend
 
-Backend for the KanMind project built with Django and Django REST Framework.
+Kanban Task Management API built with Django REST Framework.  
+It provides resource-oriented endpoints for managing boards, tasks, and comments, including board membership/ownership permissions, task assignment and review flows, and user-specific task views (e.g. “assigned to me”, “reviewing”), following clean, beginner-friendly DRF best practices.
 
 ## Tech Stack
-- Python
-- Django
-- Django REST Framework
+- Python 3.14
+- Django 6.0
+- Django REST Framework 3.17
 
 ## Setup
 

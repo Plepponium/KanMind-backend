@@ -8,6 +8,7 @@ from auth_app.api.serializers import EmailCheckResponseSerializer, LoginSerializ
 
 
 class RegistrationView(APIView):
+    """View for user registration."""
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -31,6 +32,7 @@ class RegistrationView(APIView):
 
 
 class LoginView(APIView):
+    """View for user login."""
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -54,6 +56,7 @@ class LoginView(APIView):
 
 
 class EmailCheckView(APIView):
+    """View to check if a user with a given email exists."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

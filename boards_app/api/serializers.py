@@ -6,6 +6,8 @@ from tasks_app.api.serializers import TaskCreateSerializer
 
 
 class BoardListSerializer(serializers.ModelSerializer):
+    """Serializer for listing boards."""
+
     member_count = serializers.IntegerField(read_only=True)
     ticket_count = serializers.IntegerField(read_only=True)
     tasks_to_do_count = serializers.IntegerField(read_only=True)
@@ -26,6 +28,8 @@ class BoardListSerializer(serializers.ModelSerializer):
 
 
 class BoardCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating a board."""
+
     members = serializers.ListField(
         child=serializers.IntegerField(),
         write_only=True,
@@ -78,6 +82,8 @@ class BoardCreateSerializer(serializers.ModelSerializer):
 
 
 class BoardMemberSerializer(serializers.ModelSerializer):
+    """Serializer for getting board members."""
+
     fullname = serializers.SerializerMethodField()
 
     class Meta:
@@ -89,6 +95,8 @@ class BoardMemberSerializer(serializers.ModelSerializer):
 
 
 class BoardDetailSerializer(serializers.ModelSerializer):
+    """Serializer for detailed board information."""
+
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
     members = BoardMemberSerializer(many=True, read_only=True)
     tasks = serializers.SerializerMethodField()
@@ -102,6 +110,8 @@ class BoardDetailSerializer(serializers.ModelSerializer):
 
 
 class BoardUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating a board."""
+
     members = serializers.ListField(
         child=serializers.IntegerField(),
         write_only=True,

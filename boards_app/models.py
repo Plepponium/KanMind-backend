@@ -3,6 +3,8 @@ from django.db import models
 
 
 class Board(models.Model):
+    """Model representing a board."""
+
     title = models.CharField(max_length=255)
     owner = models.ForeignKey(
         User,

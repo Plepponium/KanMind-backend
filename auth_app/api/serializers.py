@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+    """Serializer for user registration."""
     fullname = serializers.CharField(write_only=True)
     email = serializers.EmailField(write_only=True)
     password = serializers.CharField(write_only=True, min_length=8)
@@ -49,6 +50,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
+    """Serializer for user login."""
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
@@ -73,6 +75,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class EmailCheckResponseSerializer(serializers.ModelSerializer):
+    """Serializer for email check response."""
     fullname = serializers.SerializerMethodField()
 
     class Meta:

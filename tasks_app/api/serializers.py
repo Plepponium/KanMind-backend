@@ -36,6 +36,8 @@ class BoardMemberValidationMixin:
 
 
 class TaskUserSerializer(serializers.ModelSerializer):
+    """Serializer for user information in tasks."""
+
     fullname = serializers.SerializerMethodField()
 
     class Meta:
@@ -47,6 +49,8 @@ class TaskUserSerializer(serializers.ModelSerializer):
 
 
 class TaskListSerializer(serializers.ModelSerializer):
+    """Serializer for listing tasks."""
+
     assignee = TaskUserSerializer(read_only=True)
     reviewer = TaskUserSerializer(read_only=True)
     comments_count = serializers.SerializerMethodField(read_only=True)
@@ -71,6 +75,8 @@ class TaskListSerializer(serializers.ModelSerializer):
 
 
 class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializer):
+    """Serializer for creating a task."""
+
     board = serializers.PrimaryKeyRelatedField(queryset=Board.objects.all())
     assignee_id = serializers.IntegerField(
         write_only=True, required=False, allow_null=True)
@@ -98,6 +104,8 @@ class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
         ]
 
     def validate(self, attrs):
+        """Validate that the assignee and reviewer are members of the board."""
+
         attrs["assignee"] = self._validate_member(
             attrs.get("assignee_id"), "assignee_id")
         attrs["reviewer"] = self._validate_member(
@@ -113,6 +121,8 @@ class TaskCreateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
 
 
 class TaskUpdateSerializer(BoardMemberValidationMixin, serializers.ModelSerializer):
+    """Serializer for updating a task."""
+
     assignee_id = serializers.IntegerField(
         write_only=True, required=False, allow_null=True)
     reviewer_id = serializers.IntegerField(
@@ -136,7 +146,7 @@ class TaskUpdateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
         ]
 
     def validate(self, attrs):
-        """Only validate assignee/reviewer if they are explicitly sent in PATCH."""
+        """Validate that the assignee and reviewer are members of the board."""
 
         if "assignee_id" in self.initial_data:
             attrs["assignee"] = self._validate_member(
@@ -157,6 +167,8 @@ class TaskUpdateSerializer(BoardMemberValidationMixin, serializers.ModelSerializ
 
 
 class TaskCommentSerializer(serializers.ModelSerializer):
+    """Serializer for task comments."""
+
     author = serializers.SerializerMethodField()
 
     class Meta:

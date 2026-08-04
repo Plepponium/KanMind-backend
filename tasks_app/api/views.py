@@ -21,6 +21,7 @@ class TaskAccessMixin:
 
     def get_board(self, board_id):
         """Return the board instance for the given id or raise a 404 error."""
+
         try:
             board_id = int(board_id)
         except (ValueError, TypeError):
@@ -34,6 +35,7 @@ class TaskAccessMixin:
 
     def get_task(self, task_id):
         """Return the task instance for the given id or raise a 404 error."""
+
         try:
             task_id = int(task_id)
         except (ValueError, TypeError):
@@ -61,6 +63,8 @@ class TaskAccessMixin:
 
 
 class TaskCreateView(TaskAccessMixin, APIView):
+    """View for creating tasks."""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -88,6 +92,8 @@ class TaskCreateView(TaskAccessMixin, APIView):
 
 
 class TaskDetailView(TaskAccessMixin, APIView):
+    """View for retrieving, updating, and deleting tasks."""
+
     permission_classes = [IsAuthenticated]
 
     def check_delete_permission(self, task, user):
@@ -119,6 +125,8 @@ class TaskDetailView(TaskAccessMixin, APIView):
 
 
 class TaskAssignedToMeView(APIView):
+    """View for retrieving tasks assigned to the authenticated user."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -129,6 +137,8 @@ class TaskAssignedToMeView(APIView):
 
 
 class TaskReviewingView(APIView):
+    """View for retrieving tasks where the authenticated user is the reviewer."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -139,6 +149,8 @@ class TaskReviewingView(APIView):
 
 
 class TaskCommentsView(TaskAccessMixin, APIView):
+    """View for retrieving and creating comments for a specific task."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, task_id):
@@ -169,6 +181,8 @@ class TaskCommentsView(TaskAccessMixin, APIView):
 
 
 class TaskCommentDetailView(TaskAccessMixin, APIView):
+    """View for deleting a specific comment on a task."""
+
     permission_classes = [IsAuthenticated]
 
     def get_comment(self, task, comment_id):

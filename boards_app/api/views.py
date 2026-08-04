@@ -9,14 +9,19 @@ from .serializers import BoardCreateSerializer, BoardDetailSerializer, BoardList
 
 
 class BoardViewSet(ModelViewSet):
+    """ViewSet for managing boards."""
     queryset = Board.objects.all()
 
     def get_queryset(self):
+        """Get the queryset for the current user."""
+
         user = self.request.user
         queryset = Board.objects.filter(
             Q(owner=user) | Q(members=user)).distinct()
 
         if self.action == "list":
+            """Annotate the queryset with counts for members, tickets, tasks to do, and high priority tasks."""
+
             return queryset.annotate(
                 member_count=Count("members", distinct=True),
                 ticket_count=Count("tasks", distinct=True),
